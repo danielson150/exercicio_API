@@ -27,6 +27,28 @@ class ProfileSerializer(serializers.ModelSerializer):
                   'email', 
                   'address']
 
+    class Meta:
+        model = Profile
+        fields = ['pk', 'name', 'email', 'address']
+
+    def create(self, validated_data):
+        address_data = validated_data.pop('address')
+        user_created = User.objects.create_user(username=validated_data['name'].split()[0], email=validated_data['email'], password='damwdjjd')
+        address = Address.objects.create(**address_data)
+        return Profile.objects.create(address=address, user=user_created, **validated_data)
+    
+    def update(self, instance, validated_data):
+        address_data = validated_data.pop('address')
+        address = instance.address
+        instance.email = validated_data.get('email', instance.email)
+        instance.name = validated_data.get('name', instance.name)
+        address.street = address_data.get('street', address.street)
+        address.suite = address_data.get('suite', address.suite)
+        address.city = address_data.get('city', address.city)
+        address.zipcode = address_data.get('zipcode', address.zipcode)
+        instance.save()
+        address.save()
+        return instance
 
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
@@ -35,6 +57,11 @@ class PostSerializer(serializers.ModelSerializer):
                   'userId', 
                   'title', 
                   'body']
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get('title', instance.title)
+        instance.body = validated_data.get('body', instance.body)
+        instance.save()
+        return instance
 
 
 class CommentSerializer(serializers.ModelSerializer):
